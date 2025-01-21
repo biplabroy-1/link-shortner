@@ -9,7 +9,6 @@ RUN bun run build
 FROM oven/bun:slim AS runner
 WORKDIR /app
 COPY --from=builder /app/dist /app
-COPY --from=builder /app/.env /app
 EXPOSE 5000
 
 # Use "bun run" to execute the built application
