@@ -1,12 +1,17 @@
 import { urlMap } from "../urlMaps";
-import { Router } from "express";
+import { Router, type Request, type Response } from "express";
 const router = Router();
-router.post("/create", async (req, res) => {
+
+router.post("/create", async (req: Request, res: Response) => {
 	const { link } = req.body;
 	const existingLink = await urlMap.findOne({ longUrl: link });
+	const fullUrl = `${req.protocol}://${req.get("host")}/`;
 
 	if (existingLink) {
-		res.send({ Links: existingLink.shortUrl });
+		res.send({
+			"Link Exist": existingLink.shortUrl,
+			ShortURL: `${fullUrl}${existingLink.shortUrl}`,
+		});
 	}
 	let shortUrl: string;
 	let existingShortLink: string;
@@ -24,18 +29,19 @@ router.post("/create", async (req, res) => {
 		shortUrl,
 	});
 	await newLink.save();
-	res.json({ Link: newLink });
+	res.json({
+		Link: newLink.shortUrl,
+		ShortURL: `${fullUrl}${newLink.shortUrl}`,
+	});
 });
 
-router.delete("/delete", (_, res) => {
-
-    urlMap.deleteMany({}, (err) => {
-        if (err) {
-            res.send(err);
-        } else {
-            res.send("Deleted all links");
-        }
-    });
+router.delete("/delete", async (req: Request, res: Response) => {
+	const { link } = req.body;
+	const deletedUrl = await urlMap.findOneAndDelete({ longUrl: link });
+	if (!deletedUrl) {
+		res.status(404).json({ error: "URL not found" });
+	}
+	res.json({ Link: deletedUrl });
 });
 
 export default router;
